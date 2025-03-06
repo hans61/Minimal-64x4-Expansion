@@ -1,22 +1,22 @@
 ; this guide uses http://www.rjhcoding.com/avrc-sd-interface-1.php
-; Use with test SD card with FAT32 a folder SUBFOLDR
-; in which there is a file DEEPFILE.TXT
+; 
+; 
 #org 0x2000
 start:
     MIB 0xfe,0xffff                  ; SP initialize
 main:
     JPS _Clear
     LDI 10 JAS delay_ms              ; give card time to power up
-	MIZ 1,_YPos MIZ 5,_XPos			 ; Statuszeile 
+    MIZ 1,_YPos MIZ 5,_XPos          ; status bar
     JPS _Print "SD init...", 0
     JPS SD_init
     CPI 0x00
     BEQ next1
-	MIZ 1,_YPos MIZ 5,_XPos
+    MIZ 1,_YPos MIZ 5,_XPos
     JPS _Print "Error initializaing SD CARD", 0
 returnError:
     JPS _Print 10, "ANY KEY ", 0
-	JPS _WaitInput
+    JPS _WaitInput
     JPS _Clear
     JPA _Prompt
 next1:
@@ -24,234 +24,234 @@ next1:
     BCC initsuccess
 fat32error:
     LDB fat32_errorstage JAS _PrintHex
-	MIZ 1,_YPos MIZ 5,_XPos			; Statuszeile 
+    MIZ 1,_YPos MIZ 5,_XPos         ; status bar
     JPS _Print " FAT32 Error", 0
     JPA returnError
 
-initsuccess:						; erfolgreiche Initialisierung der SD-Karte
+initsuccess:                        ; successful initialization of the SD card
     ; Open root directory
-	MIZ 1,_YPos MIZ 5,_XPos			; Statuszeile 
+    MIZ 1,_YPos MIZ 5,_XPos         ; status bar
     JPS _Print "Open Root                 ", 0
     JPS fat32_openroot
 test00:
-	JPS readDirList
-	; hier Liste fertig eingelesen
-    JPS _Clear	
+    JPS readDirList
+    ; here list finished reading
+    JPS _Clear  
 
 test01:
-	MIZ 1,_YPos MIZ 5,_XPos
+    MIZ 1,_YPos MIZ 5,_XPos
     JPS _Print "Volume: ", 0
-	JPS printVolumeLabel
-	JPS SilenceAllChannels
-	CLB PtrE CLB Off
-	JPS printFrame
-	JPS printListe
-	
-test03:	
-	MIZ 3,_YPos ABZ PtrE,_YPos MIZ 4,_XPos LDI ">" JAS _PrintChar	; Zeiger auf Eintrag PtrE setzen (0..)
+    JPS printVolumeLabel
+    JPS SilenceAllChannels
+    CLB PtrE CLB Off
+    JPS printFrame
+    JPS printListe
+    
+test03: 
+    MIZ 3,_YPos ABZ PtrE,_YPos MIZ 4,_XPos LDI ">" JAS _PrintChar   ; Set pointer to entry PtrE (0..)
 
 test04:
-	JPS _WaitInput	; Eingabeschleife
-	STB Key
-	CPI "Q"
-	BEQ quit
-	CPI "q"
-	BEQ quit
-	CPI 10			; CR
-	BEQ tCR
-	CPI 0xe1		; UP geht nur auf angeschlossener Tastatur nicht TeraTerm
-	BEQ tUP
-	CPI 0xe2		; DOWN geht nur auf angeschlossener Tastatur nicht TeraTerm
-	BEQ tDOWN
-	CPI 0x09		; TAB
-	BEQ tDOWN
-	CPI "v"			; Anzeige zum debuggen
-	BEQ tView
-	
-	JPA test04
+    JPS _WaitInput  ; input loop
+    STB Key
+    CPI "Q"
+    BEQ quit
+    CPI "q"
+    BEQ quit
+    CPI 10          ; CR
+    BEQ tCR
+    CPI 0xe1        ; UP only works on connected keyboard not TeraTerm
+    BEQ tUP
+    CPI 0xe2        ; DOWN only works on connected keyboard not TeraTerm
+    BEQ tDOWN
+    CPI 0x09        ; TAB
+    BEQ tDOWN
+    CPI "v"         ; display for debugging
+    BEQ tView
+    
+    JPA test04
 tUP:
-	LDB PtrE		; <=n-1
-	CPI 0x00		; PtrE zeigt auf obersten Eintrag
-	BEQ tUP1		; test04
-	MIZ 3,_YPos ABZ PtrE,_YPos MIZ 4,_XPos LDI " " JAS _PrintChar	; lösche Markierung
-	DEB PtrE		; Zeiger nach oben
-	JPA test03
+    LDB PtrE        ; <=n-1
+    CPI 0x00        ; PtrE points to the top entry
+    BEQ tUP1
+    MIZ 3,_YPos ABZ PtrE,_YPos MIZ 4,_XPos LDI " " JAS _PrintChar   ; delete marker
+    DEB PtrE        ; pointer up
+    JPA test03
 tUP1:
-	LDB Off
-	CPI 0x00
-	BEQ test04
-	DEB Off			; Offset verkleinern
-	JPS printListe	; jetzt Liste neu schreiben
-	JPA test04
+    LDB Off
+    CPI 0x00
+    BEQ test04
+    DEB Off         ; Reduce offset
+    JPS printListe  ; now rewrite list
+    JPA test04
 tDOWN:
-	MIZ 3,_YPos ABZ PtrE,_YPos MIZ 4,_XPos LDI " " JAS _PrintChar	; lösche Markierung
-	;LDB entries		; 1..n
-	;CPB PtrE		; 0..n-1
-	LDB PtrE		; <=n-1
-	CPI <_LINES-1
-	BEQ	tDOWN1		; Ende der Anzeige erreicht
-	INC
-	CPB entries		; n
-	BEQ test05		; Ende der Liste ist erreicht
-	INB PtrE
-	JPA test03
+    MIZ 3,_YPos ABZ PtrE,_YPos MIZ 4,_XPos LDI " " JAS _PrintChar   ; delete marker
+    ;LDB entries        ; 1..n
+    ;CPB PtrE       ; 0..n-1
+    LDB PtrE        ; <=n-1
+    CPI <_LINES-1
+    BEQ tDOWN1      ; end of ad reached
+    INC
+    CPB entries     ; n
+    BEQ test05      ; End of the list has been reached
+    INB PtrE
+    JPA test03
 test05:
-	LDB Key
-	CPI 0xe2
-	BEQ test03
-	CLB PtrE		; auf 1. Eintrag
-	CLB Off
-	JPS printListe	; jetzt Liste neu schreiben
-	JPA test03
+    LDB Key
+    CPI 0xe2
+    BEQ test03
+    CLB PtrE        ; on 1st entry
+    CLB Off
+    JPS printListe  ; now rewrite list
+    JPA test03
 tDOWN1:
-	LDB PtrE
-	ADB Off
-	INC
-	CPB entries		; n
-	BEQ test05		; Ende der Liste ist erreicht
-	INB Off
-	JPS printListe	; jetzt Liste neu schreiben
-	JPA test03
+    LDB PtrE
+    ADB Off
+    INC
+    CPB entries     ; n
+    BEQ test05      ; End of the list has been reached
+    INB Off
+    JPS printListe  ; now rewrite list
+    JPA test03
 tCR:
-	; Adresse im Puffer berechnen
-	MBZ PtrE, Z1
-	LDB Off			; Offset berücksichtigen
-	AD.Z Z1
-	CLZ Z1+1
-	LLV Z1 LLV Z1 LLV Z1 LLV Z1 LLV Z1 ; 5x links schieben (*32)
-	AIV <list_buffer,Z1
-	AIZ >list_buffer,Z1+1
-	MVV Z1,zp_sd_address
-	AIV 11,Z1				; 0+11
-	LDT Z1
-	ANI 0x10
-	CPI 0x00
-	BEQ isFile				; es ist kein Direktory
-	; directory
-	AIV 9,Z1				; 11+9=20
-	LDT Z1 CPI 0x00
-	BNE tCR1
-	INV Z1 LDT Z1 CPI 0x00
-	BNE tCR1
-	AIV 5,Z1				; 21+5=26
-	LDT Z1 CPI 0x00
-	BNE tCR1
-	INV Z1 LDT Z1 CPI 0x00
-	BNE tCR1
-	; es ist das Root dirctory
-	JPS fat32_openroot
-	JPA test00
+    ; Calculate address in buffer
+    MBZ PtrE, Z1
+    LDB Off         ; consider offset
+    AD.Z Z1
+    CLZ Z1+1
+    LLV Z1 LLV Z1 LLV Z1 LLV Z1 LLV Z1 ; 5x slide left (*32)
+    AIV <list_buffer,Z1
+    AIZ >list_buffer,Z1+1
+    MVV Z1,zp_sd_address
+    AIV 11,Z1               ; 0+11
+    LDT Z1
+    ANI 0x10
+    CPI 0x00
+    BEQ isFile              ; it is not a directory
+    ; directory
+    AIV 9,Z1                ; 11+9=20
+    LDT Z1 CPI 0x00
+    BNE tCR1
+    INV Z1 LDT Z1 CPI 0x00
+    BNE tCR1
+    AIV 5,Z1                ; 21+5=26
+    LDT Z1 CPI 0x00
+    BNE tCR1
+    INV Z1 LDT Z1 CPI 0x00
+    BNE tCR1
+    ; it is the root directory
+    JPS fat32_openroot
+    JPA test00
 tCR1:
-	; jedes andere dirctory
-	JPS fat32_opendirent
-	JPA test00
+    ; any other directory
+    JPS fat32_opendirent
+    JPA test00
 
 
-; debug code	
+; debug code    
 tView:
-	MIZ 26,_YPos MIZ 0,_XPos
-	MBZ PtrE,Z1 CLZ Z1+1
-	LDB Off
-	PHS JAS _PrintHex LDI " " JAS _PrintChar PLS
-	AD.Z Z1
-	LLV Z1 LLV Z1 LLV Z1 LLV Z1 LLV Z1
-	AIV <list_buffer,Z1 AIZ >list_buffer,Z1+1
-	MIZ 32,Z0
+    MIZ 26,_YPos MIZ 0,_XPos
+    MBZ PtrE,Z1 CLZ Z1+1
+    LDB Off
+    PHS JAS _PrintHex LDI " " JAS _PrintChar PLS
+    AD.Z Z1
+    LLV Z1 LLV Z1 LLV Z1 LLV Z1 LLV Z1
+    AIV <list_buffer,Z1 AIZ >list_buffer,Z1+1
+    MIZ 32,Z0
 tV:
-	LDT Z1 JAS _PrintHex
-	INV Z1 DEZ Z0
-	BEQ test03
-	CIZ 32-11,Z0
-	BEQ tV1
-	CIZ 32-12,Z0
-	BEQ tV1
-	CIZ 32-20,Z0
-	BEQ tV1
-	CIZ 32-22,Z0
-	BEQ tV1
-	CIZ 32-26,Z0
-	BEQ tV1
-	CIZ 32-28,Z0
-	BEQ tV1
-	JPA tV
+    LDT Z1 JAS _PrintHex
+    INV Z1 DEZ Z0
+    BEQ test03
+    CIZ 32-11,Z0
+    BEQ tV1
+    CIZ 32-12,Z0
+    BEQ tV1
+    CIZ 32-20,Z0
+    BEQ tV1
+    CIZ 32-22,Z0
+    BEQ tV1
+    CIZ 32-26,Z0
+    BEQ tV1
+    CIZ 32-28,Z0
+    BEQ tV1
+    JPA tV
 tV1:
-	LDI " " JAS _PrintChar
-	JPA tV
-; debug code ende
-	
+    LDI " " JAS _PrintChar
+    JPA tV
+; debug code end
+    
 isFile:
-	MIZ 28,_YPos MIZ 5,_XPos	; Statuszeile
-	DEV Z1 LDT Z1 CPI "C"
-	BNE noVGC
-	DEV Z1 LDT Z1 CPI "G"
-	BNE noVGC
-	DEV Z1 LDT Z1 CPI "V"
-	BNE noVGC
+    MIZ 28,_YPos MIZ 5,_XPos    ; status bar
+    DEV Z1 LDT Z1 CPI "C"
+    BNE noVGC
+    DEV Z1 LDT Z1 CPI "G"
+    BNE noVGC
+    DEV Z1 LDT Z1 CPI "V"
+    BNE noVGC
 
-	JPS _Print "Play: ", 0
-	; Adresse im Puffer berechnen
-	MBZ PtrE,Z1
-	LDB Off AD.Z Z1
-	CLZ Z1+1
-	LLV Z1 LLV Z1 LLV Z1 LLV Z1 LLV Z1 ; 5x links schieben (*32)
-	AIV <list_buffer,Z1
-	AIZ >list_buffer,Z1+1
-	;MIZ 26,_YPos MIZ 5,_XPos
-	;LDZ Z1+1 JAS _PrintHex
-	;LDZ Z1 JAS _PrintHex
-	MVV Z1,zp_h_address
-	MVV Z1,zp_sd_address
-	;JPS _WaitInput	
-	JPS printFileName
-	;JPS _WaitInput	
-	JPS fat32_opendirent
-	JPA songLoop
+    JPS _Print "Play: ", 0
+    ; Calculate address in buffer
+    MBZ PtrE,Z1
+    LDB Off AD.Z Z1
+    CLZ Z1+1
+    LLV Z1 LLV Z1 LLV Z1 LLV Z1 LLV Z1 ; 5x shift left (*32)
+    AIV <list_buffer,Z1
+    AIZ >list_buffer,Z1+1
+    ;MIZ 26,_YPos MIZ 5,_XPos
+    ;LDZ Z1+1 JAS _PrintHex
+    ;LDZ Z1 JAS _PrintHex
+    MVV Z1,zp_h_address
+    MVV Z1,zp_sd_address
+    ;JPS _WaitInput 
+    JPS printFileName
+    ;JPS _WaitInput 
+    JPS fat32_opendirent
+    JPA songLoop
 
 noVGC:
     JPS _Print "File is ", 0
-	; Adresse im Puffer berechnen
-	MBZ PtrE,Z1
-	LDB Off AD.Z Z1
-	CLZ Z1+1
-	LLV Z1 LLV Z1 LLV Z1 LLV Z1 LLV Z1 ; 5x links schieben (*32)
-	AIV <list_buffer,Z1
-	AIZ >list_buffer,Z1+1
-	MVV Z1,zp_h_address
-	JPS printFileName
-	;JPS _WaitInput	
-	JPA test03
+    ; Calculate address in buffer
+    MBZ PtrE,Z1
+    LDB Off AD.Z Z1
+    CLZ Z1+1
+    LLV Z1 LLV Z1 LLV Z1 LLV Z1 LLV Z1 ; 5x shift left (*32)
+    AIV <list_buffer,Z1
+    AIZ >list_buffer,Z1+1
+    MVV Z1,zp_h_address
+    JPS printFileName
+    ;JPS _WaitInput 
+    JPA test03
 ; ######################## Sound #########################
-songLoop:	
-	JPS fat32_file_readbyte
-	BCC songL1
+songLoop:   
+    JPS fat32_file_readbyte
+    BCC songL1
 EOF:
     ;JPS _Print "End of File", 10, 0
-	JPS SilenceAllChannels
-	JPA start
-songL1:	
-	STZ counter
-songL2:	
-	LDZ counter
-	CPI 0xff
-	BEQ finish
+    JPS SilenceAllChannels
+    JPA start
+songL1: 
+    STZ counter
+songL2: 
+    LDZ counter
+    CPI 0xff
+    BEQ finish
 dataLoop:
-	LDZ counter
-	CPI 0x00
-	BEQ noData
-	DEZ counter
-	JPS fat32_file_readbyte
-	BCS EOF
-	JAS wrSN76489
-	JPA dataLoop
+    LDZ counter
+    CPI 0x00
+    BEQ noData
+    DEZ counter
+    JPS fat32_file_readbyte
+    BCS EOF
+    JAS wrSN76489
+    JPA dataLoop
 noData:
-	JPS wait20ms	; 50Hz = 20ms
-	JPA songLoop
+    JPS wait20ms    ; 50Hz = 20ms
+    JPA songLoop
 finish:
-	JPS SilenceAllChannels
-	JPA start
+    JPS SilenceAllChannels
+    JPA start
 quit:
-	JPS _Clear
-	JPA _Start
+    JPS _Clear
+    JPA _Start
 
 
 
@@ -261,125 +261,125 @@ Off: 0x00
 Key: 0x00
 
 printFrame:
-	MIZ 0,_YPos MIZ 2,_XPos
-	LDI '/' JAS _PrintChar MIZ 26,Z3
+    MIZ 0,_YPos MIZ 2,_XPos
+    LDI '/' JAS _PrintChar MIZ 26,Z3
 printF1:
-	LDI '-' JAS _PrintChar DEZ Z3 BNE printF1
-	LDI '\' JAS _PrintChar
-	INZ _YPos MIZ 2,_XPos
-	LDI '|' JAS _PrintChar MIZ 29,_XPos LDI '|' JAS _PrintChar 
-	INZ _YPos MIZ 2,_XPos
-	JPS _Print "|-- NAME ----------- SIZE -|", 0
-	MIZ <_LINES,Z3
+    LDI '-' JAS _PrintChar DEZ Z3 BNE printF1
+    LDI '\' JAS _PrintChar
+    INZ _YPos MIZ 2,_XPos
+    LDI '|' JAS _PrintChar MIZ 29,_XPos LDI '|' JAS _PrintChar 
+    INZ _YPos MIZ 2,_XPos
+    JPS _Print "|-- NAME ----------- SIZE -|", 0
+    MIZ <_LINES,Z3
 printF2:
-	INZ _YPos MIZ 2,_XPos
-	LDI '|' JAS _PrintChar MIZ 29,_XPos LDI '|' JAS _PrintChar 
-	DEZ Z3 BNE printF2
-	INZ _YPos MIZ 2,_XPos
-	LDI '|' JAS _PrintChar MIZ 26,Z3
+    INZ _YPos MIZ 2,_XPos
+    LDI '|' JAS _PrintChar MIZ 29,_XPos LDI '|' JAS _PrintChar 
+    DEZ Z3 BNE printF2
+    INZ _YPos MIZ 2,_XPos
+    LDI '|' JAS _PrintChar MIZ 26,Z3
 printF3:
-	LDI '-' JAS _PrintChar DEZ Z3 BNE printF3
-	LDI '|' JAS _PrintChar
-	INZ _YPos MIZ 2,_XPos
-	LDI '|' JAS _PrintChar MIZ 29,_XPos LDI '|' JAS _PrintChar 
-	INZ _YPos MIZ 2,_XPos
-	LDI '\' JAS _PrintChar MIZ 26,Z3
+    LDI '-' JAS _PrintChar DEZ Z3 BNE printF3
+    LDI '|' JAS _PrintChar
+    INZ _YPos MIZ 2,_XPos
+    LDI '|' JAS _PrintChar MIZ 29,_XPos LDI '|' JAS _PrintChar 
+    INZ _YPos MIZ 2,_XPos
+    LDI '\' JAS _PrintChar MIZ 26,Z3
 printF4:
-	LDI '-' JAS _PrintChar DEZ Z3 BNE printF4
-	LDI '/' JAS _PrintChar
-	RTS
-	
+    LDI '-' JAS _PrintChar DEZ Z3 BNE printF4
+    LDI '/' JAS _PrintChar
+    RTS
+    
 printListe:
-	MIW	list_buffer,dir_ptr			; dir_ptr Zeiger auf Listen Anfang
-	MBZ Off,Z3
+    MIW list_buffer,dir_ptr         ; dir_ptr pointer to list start
+    MBZ Off,Z3
 prList1:
-	CIZ 0x00,Z3
-	BEQ prList2
-	AIW 32,dir_ptr
-	DEZ Z3
-	JPA prList1
+    CIZ 0x00,Z3
+    BEQ prList2
+    AIW 32,dir_ptr
+    DEZ Z3
+    JPA prList1
 prList2:
-	LDB entries
-	CPI <_LINES
-	BMI prList3						; weniger als 25 Einträge in der Liste
-	MIZ <_LINES,Z3
-	JPA prList4
+    LDB entries
+    CPI <_LINES
+    BMI prList3                     ; less than 25 entries in the list
+    MIZ <_LINES,Z3
+    JPA prList4
 prList3:
-	MBZ entries,Z3					; Z3 ist Anzahl der Einträge in der Liste
+    MBZ entries,Z3                  ; Z3 is number of entries in the list
 prList4:
-	MIZ 3, _YPos					; Liste startet bei 4. Bildschirmzeile
+    MIZ 3, _YPos                    ; List starts at 4th screen line
 prList5:
-	MWV dir_ptr,zp_h_address
-	MIZ 5, _XPos
-	JPS printEntrie
-	INZ _YPos
-	; LDI 10 JAS _PrintChar
-	AIW 32,dir_ptr
-	DEZ Z3
-	BNE prList5
-	RTS
+    MWV dir_ptr,zp_h_address
+    MIZ 5, _XPos
+    JPS printEntrie
+    INZ _YPos
+    ; LDI 10 JAS _PrintChar
+    AIW 32,dir_ptr
+    DEZ Z3
+    BNE prList5
+    RTS
 printFileName:
-	; zp_h_address ist Zeiger auf Datensatz
-	MIZ 8,Z0
-	MIZ 13,Z1
+    ; zp_h_address is pointer to record
+    MIZ 8,Z0
+    MIZ 13,Z1
 prEn01:
     LDT zp_h_address                ; A = *(*zp_h_address)
-	PHS INV zp_h_address PLS
-	CPI 0x20						; ist Leerzeichen
-	BEQ prEn02
-	JAS _PrintChar
-	DEZ Z1							; ein Zeichen vom Tabulator abziehen
+    PHS INV zp_h_address PLS
+    CPI 0x20                        ; is space
+    BEQ prEn02
+    JAS _PrintChar
+    DEZ Z1                          ; subtract one character from the tab
 prEn02:
-	DEZ Z0
-	BNE prEn01
-	MIZ 3,Z0
-	LDT zp_h_address
-	CPI 0x20						; ist Leerzeichen
-	BEQ prEn03
-	; Punkt einfügen
-	LDI 0x2e JAS _PrintChar DEZ Z1
+    DEZ Z0
+    BNE prEn01
+    MIZ 3,Z0
+    LDT zp_h_address
+    CPI 0x20                        ; is space
+    BEQ prEn03
+    ; Punkt einfügen
+    LDI 0x2e JAS _PrintChar DEZ Z1
 prEn03:
     LDT zp_h_address                ; A = *(*zp_h_address)
-	PHS INV zp_h_address PLS
-	CPI 0x20						; ist Leerzeichen
-	BEQ prEn04
-	JAS _PrintChar DEZ Z1
+    PHS INV zp_h_address PLS
+    CPI 0x20                        ; is space
+    BEQ prEn04
+    JAS _PrintChar DEZ Z1
 prEn04:
-	DEZ Z0
-	BNE prEn03
+    DEZ Z0
+    BNE prEn03
 prEn05:
-	LDI 0x20 JAS _PrintChar
-	DEZ Z1
-	BNE prEn05
-	RTS
+    LDI 0x20 JAS _PrintChar
+    DEZ Z1
+    BNE prEn05
+    RTS
 printEntrie:
-	JPS printFileName
-	LDI 0x20 JAS _PrintChar
-	LDT zp_h_address				; Attribut
-	ANI 0x10						; Dir
-	CPI 0x00
-	BEQ prEn06
-	JPS _Print "   <DIR>",0
-	RTS
+    JPS printFileName
+    LDI 0x20 JAS _PrintChar
+    LDT zp_h_address                ; attribut
+    ANI 0x10                        ; dir
+    CPI 0x00
+    BEQ prEn06
+    JPS _Print "   <DIR>",0
+    RTS
 prEn06:
-	; Filelänge in bytes ausgeben
-	AIV 20,zp_h_address
-	LDT zp_h_address JAS _PrintHex
-	DEV zp_h_address
-	LDT zp_h_address JAS _PrintHex
-	DEV zp_h_address
-	LDT zp_h_address JAS _PrintHex
-	DEV zp_h_address
-	LDT zp_h_address JAS _PrintHex
-	RTS
-	
+    ; Output file length in bytes
+    AIV 20,zp_h_address
+    LDT zp_h_address JAS _PrintHex
+    DEV zp_h_address
+    LDT zp_h_address JAS _PrintHex
+    DEV zp_h_address
+    LDT zp_h_address JAS _PrintHex
+    DEV zp_h_address
+    LDT zp_h_address JAS _PrintHex
+    RTS
+    
 readDirList:
-	CLB	entries						; Anzahl der Listeneinträge ist 0
-	MIW	list_buffer,dir_ptr			; Zeiger auf Zielspeicher
-	;MIW	0x3800,dir_ptr				; Zeiger auf Zielspeicher
-iDL01:								; readEntry
+    CLB entries                     ; Number of list entries is 0
+    MIW list_buffer,dir_ptr         ; pointer to target memory
+    ;MIW    0x3800,dir_ptr              ; pointer to target memory 
+iDL01:                              ; read entry
     JPS fat32_readdirent
-    BCC iDL02						; nextEntry	
+    BCC iDL02                       ; next entry    
     RTS
 iDL02:
     MVV zp_sd_address,zp_h_address  ; zp_h_address = zp_sd_address (Word)
@@ -395,80 +395,80 @@ iDL02:
     ANI 0x04                        ; System = bit 2
     CPI 0x00
     BNE iDL01
-	MIZ 32,Z0                       ; Z0 = Länge DIR Eintrag
-	INB entries						; neuen Eintrag hinzugefügt
+    MIZ 32,Z0                       ; Z0 = Length DIR entry
+    INB entries                     ; new entry added
 iDL03:
-	; MZB zp_h_address,dir_ptr
-	LDT zp_h_address				; A = Quelle
-	STR dir_ptr						; Ziel = A
-	INV zp_h_address				; Quelle um eines erhöhen
-	INW	dir_ptr						; Ziel um eines erhöhen
-	DEZ Z0
-	BEQ iDL01						; fertig mit kopieren von 32 Byte
-	JPA iDL03
+    ; MZB zp_h_address,dir_ptr
+    LDT zp_h_address                ; A = source
+    STR dir_ptr                     ; target = A
+    INV zp_h_address                ; Increase source by one
+    INW dir_ptr                     ; Increase the target by one
+    DEZ Z0
+    BEQ iDL01                       ; finished copying 32 bytes
+    JPA iDL03
 saveVolumeLabel:
-	; debug
-	; JPS _Print "Save Volume-Label", 10, 0
-	MIZ 11,Z0                       ; Z0 = Länge DIR Eintrag
-	MIW strVolumeLabel,sav2+1
+    ; debug
+    ; JPS _Print "Save Volume-Label", 10, 0
+    MIZ 11,Z0                       ; Z0 = Length DIR entry
+    MIW strVolumeLabel,sav2+1
 sav1:
-    LDT zp_h_address				; A = Quelle
+    LDT zp_h_address                ; A = source
 sav2:
-	STB 0x4800
-	INV zp_h_address				; Quelle um eines erhöhen
-	INW	sav2+1  					; Ziel um eines erhöhen
-	DEZ Z0
-	BNE sav1
-	JPA iDL01
+    STB 0x4800
+    INV zp_h_address                ; Increase source by one
+    INW sav2+1                      ; Increase the target by one
+    DEZ Z0
+    BNE sav1
+    JPA iDL01
 ; ################################## Subroutines ###################################
 ; ----------------------------------------------
 delay_ms:
     PHS             ; 8
-	JPS wait1ms
+    JPS wait1ms
     PLS             ; 6
     DEC             ; 3
     BNE delay_ms    ; 4/3
     RTS             ; 
-	
+    
 waitVsync:
-	LDB vsync
-	ANI 0x40
-	CPI 0x00
-	BEQ waitVsync	; wait until high
+    LDB vsync
+    ANI 0x40
+    CPI 0x00
+    BEQ waitVsync   ; wait until high
 vsync1:
-	LDB vsync
-	ANI 0x40
-	CPI 0x00
-	BNE vsync1
-	RTS
-	
-wait1ms: MIZ 194,regA	; 4 (*0,125µS=0,5µS)			-> (0,5+999,25+2,625)µS | 195~1002,375 194~997,25µS
-w1ms: NOP NOP DEZ regA BNE w1ms	; (32+5+4[3]) * 195 = 7994 = 999,25µS
-	RTS						; 10 (+11 für JSR) = 2,625µS
+    LDB vsync
+    ANI 0x40
+    CPI 0x00
+    BNE vsync1
+    RTS
+    
+wait1ms: MIZ 194,regA   ; 4 (*0,125µS=0,5µS)            -> (0,5+999,25+2,625)µS | 195~1002,375 194~997,25µS
+w1ms: NOP NOP DEZ regA BNE w1ms ; (32+5+4[3]) * 195 = 7994 = 999,25µS
+    RTS                     ; 10 (+11 für JSR) = 2,625µS
 ; ----------------------------------------------
 wait20ms:
-	JPS waitVsync	; 16,67ms
-	; JPS waitVsync	; 16,67ms
-	; JPS waitVsync	; 16,67ms
-	JPS wait1ms
-	JPS wait1ms
-	;JPS wait1ms
-	RTS
+    JPS waitVsync   ; 16,67ms
+    ; JPS waitVsync ; 16,67ms
+    ; JPS waitVsync ; 16,67ms
+    JPS wait1ms
+    JPS wait1ms
+    ;JPS wait1ms
+    RTS
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ; write A to SN76489
 wrSN76489:
-	STB sn76489
-	MIB 0x02,hc173	; CLB rwLow
-	NOP NOP NOP NOP	; (NOP = 2µS) the SN764898 requires 8µs at 4Mhz (16µs at 2Mhz)
-	MIB 0x00,hc173	; CLB rwHigh
-	RTS
+    STB sn76489
+    MIB 0x02,hc173  ; CLB rwLow
+    NOP NOP NOP NOP ; (NOP = 2µS) the SN764898 requires 8µs at 4Mhz (16µs at 2Mhz)
+    MIB 0x00,hc173  ; CLB rwHigh
+    RTS
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 SilenceAllChannels:
-	LDI 0x9f JAS wrSN76489
-	LDI 0xbf JAS wrSN76489
-	LDI 0xdf JAS wrSN76489
-	LDI 0xff JAS wrSN76489
-	RTS
+    LDI 0x9f JAS wrSN76489
+    LDI 0xbf JAS wrSN76489
+    LDI 0xdf JAS wrSN76489
+    LDI 0xff JAS wrSN76489
+    RTS
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 cs1on:
     MIB 0xff,spi NOP
@@ -500,46 +500,46 @@ SD_power1:
 ; |             Begin Init FAT32               |
 ; ----------------------------------------------
 fat32_init:
-    ; Modul initialisieren - MBR usw. lesen, Partition suchen,
-    ; und Variablen für die Navigation im Dateisystem einrichten
+    ; Initialize module - read MBR etc., search for partition,
+    ; and set up variables for navigation in the file system
 
-    ; MBR lesen und relevante Informationen extrahieren
+    ; Read MBR and extract relevant information
 
     CLB fat32_errorstage
 
-    ; Lesen Sie den MBR und extrahieren Sie relevante Informationen (Sector 0)
-    CLQ zp_sd_currentsector+0                           ; Clear fast long, read sector = 0 (zp_sd_currentsector = [0..31]) 4 byte
-    MIV fat32_readbuffer, zp_sd_address                 ; (zp_sd_address) = fat32_readbuffer = 0x3000
+    ; Read the MBR and extract relevant information (Sector 0)
+    CLQ zp_sd_currentsector+0           ; Clear fast long, read sector = 0 (zp_sd_currentsector = [0..31]) 4 byte
+    MIV fat32_readbuffer, zp_sd_address ; (zp_sd_address) = fat32_readbuffer = 0x3000
     JPS sd_readsector
 
-    INB fat32_errorstage        ; stage 1 = boot sector signature check -> CMD17 error
+    INB fat32_errorstage                ; stage 1 = boot sector signature check -> CMD17 error
 
     ; signature check
-    LDB fat32_readbuffer+510    ; Boot sector signature 55
+    LDB fat32_readbuffer+510            ; Boot sector signature 55
     CPI 0x55
     BNE fail
-    LDB fat32_readbuffer+511    ; Boot sector signature aa
+    LDB fat32_readbuffer+511            ; Boot sector signature aa
     CPI 0xaa
     BNE fail
 
-    INB fat32_errorstage        ; stage 2 = finding partition -> signature error
+    INB fat32_errorstage                ; stage 2 = finding partition -> signature error
 
     ; Find a FAT32 partition
-    MIZ 0,RegX                        ; RegX = 0
-    LZB RegX,fat32_readbuffer+0x1c2   ; A = *(addr + *Z), fat32_readbuffer+0x1c2 = Begin der Partitionstabelle (4 x 16 Byte) + 4 = Byte Type
-    CPI 12                            ; check of FAT32 (FAT32 ist 0x0B und 0x0C)
+    MIZ 0,RegX                         ; RegX = 0
+    LZB RegX,fat32_readbuffer+0x1c2    ; A = *(addr + *Z), fat32_readbuffer+0x1c2 = Begin der Partitionstabelle (4 x 16 Byte) + 4 = Byte Type
+    CPI 12                             ; check of FAT32 (FAT32 ist 0x0B und 0x0C)
     BEQ foundpart
     MIZ 16,RegX
     LZB RegX,fat32_readbuffer+0x1c2
-    CPI 12                            ; check of FAT32
+    CPI 12                             ; check of FAT32
     BEQ foundpart
     MIZ 32,RegX
     LZB RegX,fat32_readbuffer+0x1c2
-    CPI 12                      ; check of FAT32
+    CPI 12                             ; check of FAT32
     BEQ foundpart
     MIZ 48,RegX
     LZB RegX,fat32_readbuffer+0x1c2
-    CPI 12                      ; check of FAT32
+    CPI 12                             ; check of FAT32
     BEQ foundpart
 fail:
     JPA error
@@ -555,10 +555,10 @@ foundpart:
     STZ zp_sd_currentsector+2
     LZB RegX,fat32_readbuffer+0x1c9
     STZ zp_sd_currentsector+3
-    ; zp_sd_currentsector ist erster Sector der Partition
+    ; zp_sd_currentsector is the first sector of the partition
 
     MIV fat32_readbuffer, zp_sd_address
-    JPS sd_readsector           ; ersten Sector der Partition lesen
+    JPS sd_readsector           ; read the first sector of the partition
 
     INB fat32_errorstage        ; stage 3 = BPB signature check LBA begin -> "Volume ID"
 
@@ -586,7 +586,7 @@ foundpart:
     INB fat32_errorstage        ; stage 6 = SectorsPerCluster check
 
     ; Check bytes per filesystem sector, it should be 512 for any SD card that supports FAT32
-    LDB fat32_readbuffer+11     ;
+    LDB fat32_readbuffer+11
     CPI 0x00
     BNE fail
     LDB fat32_readbuffer+12     ; high byte is 2 (512), 4, 8, or 16
@@ -610,26 +610,26 @@ foundpart:
     ACI 0x00
     STB fat32_fatstart+3
     STB fat32_datastart+3
-    ; fat32_fatstart = Startsector der 1. FAT
+    ; fat32_fatstart = start sector of the 1st FAT
 
     ; Calculate the starting sector of the data area
-    LDB fat32_readbuffer+16 STZ Z0  ; number of FATs (Z0) = Anzahl der FATs
+    LDB fat32_readbuffer+16 STZ Z0  ; number of FATs (Z0) = number of FATs
 skipfatsloop:
     LDB fat32_datastart
-    ADB fat32_readbuffer+36 ; fatsize 0
+    ADB fat32_readbuffer+36     ; fatsize 0
     STB fat32_datastart
     LDB fat32_datastart+1
-    ACB fat32_readbuffer+37 ; fatsize 1
+    ACB fat32_readbuffer+37     ; fatsize 1
     STB fat32_datastart+1
     LDB fat32_datastart+2
-    ACB fat32_readbuffer+38 ; fatsize 2
+    ACB fat32_readbuffer+38     ; fatsize 2
     STB fat32_datastart+2
     LDB fat32_datastart+3
-    ACB fat32_readbuffer+39 ; fatsize 3
+    ACB fat32_readbuffer+39     ; fatsize 3
     STB fat32_datastart+3
     DEZ Z0
     BNE skipfatsloop
-    ; fat32_datastart = Zeiger auf Start des Datenbereiches (Cluster 2)
+    ; fat32_datastart = Pointer to start of the data area (cluster 2)
 
     ; Sectors-per-cluster is a power of two from 1 to 128
     LDB fat32_readbuffer+13
@@ -644,7 +644,7 @@ skipfatsloop:
     STB fat32_rootcluster+2
     LDB fat32_readbuffer+47
     STB fat32_rootcluster+3
-    ; fat32_rootcluster = Erster Datencluster (normalerweise 0x00000002)
+    ; fat32_rootcluster = First data cluster (usually 0x00000002)
 
     CLC
     RTS
@@ -653,7 +653,7 @@ error:
     SEC
     RTS
 ; ----------------------------------------------
-; *             Ende Init FAT32                *
+; *             End Init FAT32                 *
 ; ----------------------------------------------
 ; ----------------------------------------------
 printBuffer:
@@ -680,7 +680,6 @@ p256a:
 ; ----------------------------------------------
 fat32_seekcluster:
     ; Gets ready to read fat32_nextcluster, and advances it according to the FAT
-    ; Bereitet sich auf das Lesen von fat32_nextcluster vor und führt es gemäß der FAT weiter
     ; FAT sector = (cluster*4) / 512 = (cluster*2) / 256
     LDB fat32_nextcluster
     LL1
@@ -772,7 +771,7 @@ spcshiftloopdone:
     LDB fat32_nextcluster
     ANI 0x7f
     LL2
-    STZ RegY        ; Y = low byte of offset
+    STZ RegY                     ; Y = low byte of offset
 
     ; Add the potentially carried bit to the high byte of the address
     ; Carry von LL2
@@ -812,8 +811,7 @@ spcshiftloopdone:
     CPI 0xf8
     BCC notendofchain
 
-    ; It's the end of the chain, set the top bits so that we can tell this later on ####
-    ; Es ist das Ende der Kette, setzen Sie die oberen Bits, damit wir dies später erkennen können
+    ; It's the end of the chain, set the top bits so that we can tell this later on
     STB fat32_nextcluster+3
 notendofchain:
     RTS
@@ -883,7 +881,7 @@ fat32_openroot:
     JPS fat32_seekcluster
 
     ; Set the pointer to a large value so we always read a sector the first time through
-    MIZ 0xff,zp_sd_address+1 ; markieren als Sectorpuffer leer (am Ende)
+    MIZ 0xff,zp_sd_address+1 ; mark as sector buffer empty (at the end)
 
     RTS
 ; ----------------------------------------------
@@ -934,7 +932,7 @@ fat32_opendirent:
     ;LDB fat32_bytesremaining+1 JAS _PrintHex
     ;LDB fat32_bytesremaining+0 JAS _PrintHex
     ;JPS _Print 10,0
-	;JPS _WaitInput
+    ;JPS _WaitInput
     ; End Debug
 
     JPS fat32_seekcluster
@@ -984,7 +982,7 @@ endofdirectory:
 gotdata:
     ; Check first character
     LDT zp_sd_address                     ; A = *(zp_sd_address)
-    CPI 0x00                              ; 0x00 Kennung für Ende Directory
+    CPI 0x00                              ; 0x00 identifier for end directory
     ; End of directory => abort
     BEQ endofdirectory
 
@@ -994,9 +992,9 @@ gotdata:
 
     ; Check attributes
     MVV zp_sd_address,zp_h_address
-    AIV 11,zp_h_address                   ; 0..10 = 11 Zeichen Filename, 11 = Flag
+    AIV 11,zp_h_address                   ; 0..10 = 11 character filename, 11 = Flag
     LDT zp_h_address                      ; lda (zp_sd_address),y y=11
-    ANI 0x3f                              ; Attribut 0x00111111 bit 6 & 7 ungenutzt
+    ANI 0x3f                              ; Attribute 0x00111111 bit 6 & 7 unused
     CPI 0x0f                              ; LFN => start again
     BEQ fat32_readdirent
 
@@ -1452,10 +1450,10 @@ entries: 0x00
 dir_ptr: 0x00, 0x00
 
 printVolumeLabel:
-	JPS _Print
+    JPS _Print
 strVolumeLabel:
-	"           ", 10, 0
-	RTS
+    "           ", 10, 0
+    RTS
 
 
 
@@ -1485,14 +1483,14 @@ zp_sd_address: 0x00, 0x00                       ; 2 bytes
 zp_sd_currentsector: 0x00, 0x00, 0x00, 0x00     ; 4 bytes -> CMD17, CMD24
 zp_h_address: 0x00, 0x00
 
-#org 0xfee0 sn76489:	; SN76489 data port (4HC574)
-#org 0xfee1 vsync:	; 4HC574 input Kempston vsync
-#org 0xfee2 hc173:    ; bit 0 = 1 -> /CS = 0 | bit 0 = 0 -> /CS = 1
-#org 0xfee3 spi:    ; address for reading and writing the spi shift register, writing starts the beat
+#org 0xfee0 sn76489:    ; SN76489 data port (4HC574)
+#org 0xfee1 vsync:      ; 4HC574 input Kempston vsync
+#org 0xfee2 hc173:      ; bit 0 = 1 -> /CS = 0 | bit 0 = 0 -> /CS = 1
+#org 0xfee3 spi:        ; address for reading and writing the spi shift register, writing starts the beat
 
-#org 0x0001 _CS_ON:		; /CS sd card on
-#org 0x0000 _CS_OFF:	; /CS sd card off
-#org 0x0018 _LINES:		; 25 = 0x19
+#org 0x0001 _CS_ON:     ; /CS sd card on
+#org 0x0000 _CS_OFF:    ; /CS sd card off
+#org 0x0018 _LINES:     ; 25 = 0x19
 
 ; MinOS API definitions generated by 'asm os.asm -s_'
 #org 0xf000 _Start:
