@@ -8,3 +8,6 @@ An interactive experimental browser for the SD card. An SD card can be browsed. 
 
 Currently only SD cards of type 2 with FAT32 are supported. Support for type 1 is also planned. FAT12/16 support is not currently planned.
 
+## timer
+Test for a counter hh:mm:ss with the vsync signal.
+
