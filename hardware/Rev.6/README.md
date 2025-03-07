@@ -7,17 +7,20 @@ The version supports Sound SN76489, a Kempston joystick port, an SD card interfa
 ![expansion](expansion-sn76489-kempton-sd-rev6.jpg)
 
 Address decoding on the extension:
+
 INH:     1111111011xxxxxx (0xFEC0..0xFEFF)
+
 Decoder: 111111101110xyyy (0xFEE0..0xFEEF)
+
 Addresses:
-0xFEE0/0xFEE8 - 74HC574 (SN76489_D0..7, sound data)
-0xFEE1/0xFEE9 - 74HC574 (Input Joystik & VSYNC)
-0xFEE2/0xFEEA - 74HC173 (4x Output: CS SD card, CS SN76489, reserve, reserve)
-0xFEE3/0xFEEB - 74HC595+74HC165 (SPI IN/OUT SD card)
-0xFEE4/0xFEEC - reserve
-0xFEE5/0xFEED - reserve
-0xFEE6/0xFEEE - reserve
-0xFEE7/0xFEEF - reserve
+- 0xFEE0/0xFEE8 - 74HC574 (SN76489_D0..7, sound data)
+- 0xFEE1/0xFEE9 - 74HC574 (Input Joystik & VSYNC)
+- 0xFEE2/0xFEEA - 74HC173 (4x Output: CS SD card, CS SN76489, reserve, reserve)
+- 0xFEE3/0xFEEB - 74HC595+74HC165 (SPI IN/OUT SD card)
+- 0xFEE4/0xFEEC - reserve
+- 0xFEE5/0xFEED - reserve
+- 0xFEE6/0xFEEE - reserve
+- 0xFEE7/0xFEEF - reserve
 
 ![schematic](expansion-sn76489-kempton-sd-rev6.png)
 
