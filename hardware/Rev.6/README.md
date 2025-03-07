@@ -7,10 +7,8 @@ The version supports Sound SN76489, a Kempston joystick port, an SD card interfa
 ![expansion](expansion-sn76489-kempton-sd-rev6.jpg)
 
 Address decoding on the extension:
-
-INH:     1111111011xxxxxx (0xFEC0..0xFEFF)
-
-Decoder: 111111101110xyyy (0xFEE0..0xFEEF)
+- INH:     1111111011xxxxxx (0xFEC0..0xFEFF)
+- Decoder: 111111101110xyyy (0xFEE0..0xFEEF)
 
 Addresses:
 - 0xFEE0/0xFEE8 - 74HC574 (SN76489_D0..7, sound data)
