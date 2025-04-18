@@ -18,3 +18,8 @@ Test for a counter hh:mm:ss with the vsync signal.
 ## SN76489
 
 The SN76489 folder contains some examples for testing the SN76489. The examples are taken from older BASIC programs.
+
+## Joystick
+
+The joystick port can be tested using the "test-joystick" program. I did this with a C64 joystick.
+
