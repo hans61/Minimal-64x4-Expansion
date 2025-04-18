@@ -12,6 +12,8 @@ Currently only SD cards of type 2 with FAT32 are supported. Support for type 1 i
 
 The sd-card.zip file contains some sample VGC files. The contents can be unpacked onto an SD card and then browsed on Minimal using the "player" program. Selecting a VGC file with "Enter" will play it on the SN76489 sound chip.
 
+![player software](pic/software-player.jpg)
+
 ## timer
 Test for a counter hh:mm:ss with the vsync signal.
 
