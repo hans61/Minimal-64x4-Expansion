@@ -9,5 +9,7 @@ https://github.com/hans61/Minimal-64x4-Expansion/tree/main/hardware/Rev.6
 
 ## Revision 7
 
-Work in progress, extends Rev. 6 with Power ON Reset with NE555. Tested on breadboard, PCB in progress.
+Tested board:
 https://github.com/hans61/Minimal-64x4-Expansion/tree/main/hardware/Rev.7
+
+Revision 7 adds a Power ON Reset with NE555 to the board.
